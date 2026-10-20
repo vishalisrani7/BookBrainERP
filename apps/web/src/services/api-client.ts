@@ -1,4 +1,5 @@
-const API_BASE = '/api/v1';
+const envApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API_BASE = envApiUrl ? `${envApiUrl}/api/v1` : '/api/v1';
 
 export class ApiError extends Error {
   constructor(message: string, public status?: number, public details?: unknown) {
@@ -32,7 +33,7 @@ export async function apiClient<T>(
     });
   } catch (netErr: unknown) {
     throw new ApiError(
-      'Cannot connect to backend server. Please verify the API server is running on port 5000.',
+      'Cannot connect to backend server. The server might be waking up or offline. Please retry in a moment.',
       0
     );
   }
@@ -77,7 +78,7 @@ export async function apiClient<T>(
         throw new ApiError('Invalid username or password', response.status);
       }
       if (response.status === 502 || response.status === 503 || response.status === 504) {
-        throw new ApiError('Backend server is unreachable. Please verify server is running on port 5000.', response.status);
+        throw new ApiError('Backend server is waking up or unreachable. Please try again in a few moments.', response.status);
       }
       throw new ApiError(`Server returned status ${response.status}`, response.status);
     }

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: bookbrain-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build:api
+    startCommand: npm run start:api
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false # Set securely in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true # Render automatically generates a secure random 256-bit secret
+      - key: CORS_ORIGIN
+        value: '*' # Or replace with your Netlify domain (e.g. https://your-site.netlify.app)
+      - key: ADMIN_INIT_USERNAME
+        value: admin
+      - key: ADMIN_INIT_PASSWORD
+        value: BookBrainAdmin#2026

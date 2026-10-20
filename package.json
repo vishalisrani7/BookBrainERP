@@ -11,7 +11,10 @@
     "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev:api\" \"npm run dev:web\"",
     "dev:api": "npm run dev --workspace=@bookbrain/api",
     "dev:web": "npm run dev --workspace=@bookbrain/web",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=@bookbrain/shared && npm run build --workspace=@bookbrain/api && npm run build --workspace=@bookbrain/web",
+    "build:api": "npm run build --workspace=@bookbrain/shared && npm run build --workspace=@bookbrain/api",
+    "build:web": "npm run build --workspace=@bookbrain/shared && npm run build --workspace=@bookbrain/web",
+    "start:api": "npm run start --workspace=@bookbrain/api",
     "test": "npm run test --workspaces"
   },
   "devDependencies": {

@@ -1,0 +1,66 @@
+name: BookBrain ERP CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-build:
+    name: Test & Build Monorepo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Build Shared Package
+        run: npm run build --workspace=@bookbrain/shared
+
+      - name: Run API Automated Unit & Integration Tests
+        run: npm run test --workspace=@bookbrain/api
+
+      - name: Build Production Web (Vite + React)
+        run: npm run build:web
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Build Production API (TypeScript)
+        run: npm run build:api
+
+  deploy-notification:
+    name: Cloud Deployment Status
+    needs: [validate-and-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook (Optional)
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Render deployment hook..."
+          curl -s -X POST "$RENDER_DEPLOY_HOOK_URL" || true
+
+      - name: Deployment Instructions
+        run: |
+          echo "=========================================================="
+          echo "Continuous Deployment:"
+          echo "Render and Netlify automatically build and deploy new commits"
+          echo "pushed to the main branch when connected via GitHub."
+          echo "=========================================================="
