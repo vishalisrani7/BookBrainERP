@@ -1,0 +1,30 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/shared ./packages/shared
+COPY apps/api ./apps/api
+
+RUN npm install
+RUN npm run build --workspace=@bookbrain/shared
+RUN npm run build --workspace=@bookbrain/api
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=5000
+
+COPY package.json package-lock.json ./
+COPY packages/shared ./packages/shared
+COPY apps/api/package.json ./apps/api/package.json
+
+RUN npm install --omit=dev
+RUN npm run build --workspace=@bookbrain/shared
+
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+
+EXPOSE 5000
+
+CMD ["node", "apps/api/dist/server.js"]

@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: bookbrain-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: bookbrain_erp
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "127.0.0.1:27017:27017" # Private local loopback only
+
+  api:
+    build:
+      context: ../../
+      dockerfile: infrastructure/deployment/Dockerfile.api
+    container_name: bookbrain-api
+    restart: always
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongodb:27017/bookbrain_erp
+      JWT_SECRET: BookBrain_Prod_SuperSecret_JwtKey_2026!
+      CORS_ORIGIN: "*"
+    depends_on:
+      - mongodb
+    ports:
+      - "127.0.0.1:5000:5000"
+
+  web:
+    build:
+      context: ../../
+      dockerfile: infrastructure/deployment/Dockerfile.web
+    container_name: bookbrain-web
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  mongo-data:
+    driver: local
